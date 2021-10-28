@@ -7,8 +7,9 @@ const { program } = require('commander');
 const inquirer = require('inquirer');
 
 (async () => {
-    console.log("Demo app");
-
+    /**
+     * query api for todo by name
+     */
     async function getTodoByName() {
         const answer = await inquirer.prompt([
             {name: 'title', message: 'Enter a title: '},
@@ -30,54 +31,56 @@ const inquirer = require('inquirer');
     }
 
     program
-        .description('Interact with our Todo GraphQL API')
+        .description('Todo list with AWS Amplify GraphQL Demo')
         .option('-l, --list', 'list all todos')
         .option('-n, --new', 'new todo')
         .option('-u, --update', 'update todo')
         .option('-d, --delete', 'delete todo');
 
-        program.parse();
-        const options = program.opts();
+    program.parse();
+    const options = program.opts();
 
-        if (options.list) {
-            console.log("listing todos:");
-            const todos = await API.graphql(graphqlOperation(listTodos));
-            console.log(todos.data.listTodos);
-        } else if (options.new) {
-            /* create a todo */
-            const answers = await inquirer.prompt(
-                [
-                    {name: 'title', message: 'Enter a title: '},
-                    {name: 'description', message: 'Enter a description: '}
-                ])
-            if (answers.title !== '' && answers.description !== '') {
-                const todo = { name: answers.title, description: answers.description };
-                await API.graphql(graphqlOperation(createTodo, {input: todo}));
-                console.log("Added Todo", todo);
-            } else {
-                console.log("Invalid input");
-            }
-        } else if (options.update) {
-            const todo = await getTodoByName();
-            if (todo) {
-                console.log("updating todo");
-                try {
-                    await API.graphql(graphqlOperation(updateTodo, { input: { id: todo.id, description: 'updated todo desc' } } ));
-                } catch (err) {
-                    console.warn("GraphQL error", err);
-                }
-            }
-        } else if (options.delete) {
-            const todo = await getTodoByName();
-            if (todo) {
-                console.log("deleting todo");
-                try {
-                    await API.graphql(graphqlOperation(deleteTodo, { input: { id: todo.id } }));
-                } catch (err) {
-                    console.warn("GraphQL error", err);
-                }
-            }
+    if (options.list) {
+        console.log("listing todos:");
+        const todos = await API.graphql(graphqlOperation(listTodos));
+        console.log(todos.data.listTodos);
+    } else if (options.new) {
+        /* create a todo */
+        const answers = await inquirer.prompt(
+            [
+                {name: 'title', message: 'Enter a title: '},
+                {name: 'description', message: 'Enter a description: '}
+            ])
+        if (answers.title !== '' && answers.description !== '') {
+            const todo = { name: answers.title, description: answers.description };
+            await API.graphql(graphqlOperation(createTodo, {input: todo}));
         } else {
-            program.showHelpAfterError();
+            console.log("Invalid input");
         }
+    } else if (options.update) {
+        const todo = await getTodoByName();
+        if (todo) {
+            console.log("updating todo");
+            try {
+                await API.graphql(graphqlOperation(updateTodo, { input: { id: todo.id, description: 'updated todo desc' } } ));
+            } catch (err) {
+                console.warn("GraphQL error", err);
+            }
+        }
+    } else if (options.delete) {
+        const todo = await getTodoByName();
+        if (todo) {
+            console.log("deleting todo");
+            try {
+                await API.graphql(graphqlOperation(deleteTodo, { input: { id: todo.id } }));
+            } catch (err) {
+                console.warn("GraphQL error", err);
+            }
+        }
+    } else {
+        program.showHelpAfterError();
+    }
+
+    //console.log("Unsubscribing...");
+    //createSub.unsubscribe();
 })();
