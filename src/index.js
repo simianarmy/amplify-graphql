@@ -17,8 +17,8 @@ const inquirer = require('inquirer');
         const searchTerm = answer.title;
         // fetch list and search by title
         try {
-            const todos = await API.graphql(graphqlOperation(listTodos, {filter: {name: {eq: searchTerm}}}));
-            const result = todos.data.listTodos.items[0];
+            const { data: { listTodos : { items } } } = await API.graphql(graphqlOperation(listTodos, {filter: {name: {eq: searchTerm}}}));
+            const result = items[0];
 
             if (!result) {
                 console.warn(`No Todo named ${searchTerm}`);
@@ -41,9 +41,8 @@ const inquirer = require('inquirer');
     const options = program.opts();
 
     if (options.list) {
-        console.log("listing todos:");
-        const todos = await API.graphql(graphqlOperation(listTodos));
-        console.log(todos.data.listTodos);
+        const { data: { listTodos: { items } } } = await API.graphql(graphqlOperation(listTodos));
+        console.log("All todos", items);
     } else if (options.new) {
         /* create a todo */
         const answers = await inquirer.prompt(
@@ -62,7 +61,8 @@ const inquirer = require('inquirer');
         if (todo) {
             console.log("updating todo");
             try {
-                await API.graphql(graphqlOperation(updateTodo, { input: { id: todo.id, description: 'updated todo desc' } } ));
+                const answer = await inquirer.prompt([{name: 'description', message: 'Enter new description: '}]);
+                await API.graphql(graphqlOperation(updateTodo, { input: { id: todo.id, description: answer.description } } ));
             } catch (err) {
                 console.warn("GraphQL error", err);
             }
